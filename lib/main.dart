@@ -16,6 +16,7 @@ import 'package:visual_impaired_assistive_app/providers/dashboard_provider.dart'
 import 'package:visual_impaired_assistive_app/providers/session_provider.dart';
 import 'package:visual_impaired_assistive_app/providers/danger_zone_provider.dart';
 import 'package:visual_impaired_assistive_app/screens/danger_zones_screen.dart';
+import 'package:visual_impaired_assistive_app/providers/user_report_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,6 +49,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => SessionProvider()),
         ChangeNotifierProvider(create: (_) => DangerZoneProvider()),
+        ChangeNotifierProvider(create: (_) => UserReportProvider()),
       ],
       child: MaterialApp(
         title: 'Visual Impaired Assistant',
@@ -57,9 +59,15 @@ class MyApp extends StatelessWidget {
         ),
         home: Consumer<AuthProvider>(
           builder: (context, authProvider, _) {
-            return authProvider.isAuthenticated
-                ? const HomeScreen()
-                : const LoginScreen();
+            if (!authProvider.isAuthenticated) {
+              return const LoginScreen();
+            }
+            final user = authProvider.user;
+            if (user != null && user.role == 'admin') {
+              return const AdminDashboardScreen();
+            } else {
+              return const HomeScreen();
+            }
           },
         ),
         routes: {

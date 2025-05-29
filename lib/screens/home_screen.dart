@@ -41,8 +41,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isListening = false;
   bool _isNavigating = false;
   String _lastSpokenText = '';
-  bool _showQuickActions = false;
-  bool _showSafetyTips = false;
   final MapController _mapController = MapController();
   final EmergencyService _emergencyService = EmergencyService();
   final ScreenReaderService _screenReader = ScreenReaderService();
@@ -102,109 +100,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (text != _lastSpokenText) {
       await _flutterTts.speak(text);
       _lastSpokenText = text;
-    }
-  }
-
-  /// Starts listening for voice commands
-  Future<void> _startListening() async {
-    if (!_isListening) {
-      final available = await _speechToText.initialize();
-      if (available) {
-        if (!mounted) return;
-        final currentContext = context;
-        setState(() => _isListening = true);
-        await _speak('Listening for commands');
-
-        final languageProvider =
-            Provider.of<LanguageProvider>(currentContext, listen: false);
-        final options = stt.SpeechListenOptions(
-          listenMode: stt.ListenMode.confirmation,
-          cancelOnError: true,
-          partialResults: true,
-        );
-
-        await _speechToText.listen(
-          onResult: (result) => _handleVoiceCommand(result.recognizedWords),
-          localeId: languageProvider.currentLanguage,
-          listenOptions: options,
-        );
-      }
-    }
-  }
-
-  /// Handles recognized voice commands
-  ///
-  /// Supported commands:
-  /// - "start navigation"
-  /// - "stop navigation"
-  /// - "where am i"
-  /// - "help"
-  void _handleVoiceCommand(String command) {
-    final lowerCommand = command.toLowerCase();
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
-
-    // Navigation commands
-    if (lowerCommand.contains('start navigation') ||
-        lowerCommand.contains('begin navigation') ||
-        lowerCommand.contains('start guiding')) {
-      _toggleNavigation();
-    } else if (lowerCommand.contains('stop navigation') ||
-        lowerCommand.contains('end navigation') ||
-        lowerCommand.contains('stop guiding')) {
-      _toggleNavigation();
-    }
-    // Location commands
-    else if (lowerCommand.contains('where am i') ||
-        lowerCommand.contains('my location') ||
-        lowerCommand.contains('current position')) {
-      _announceLocation();
-    }
-    // Language commands
-    else if (lowerCommand.contains('change language') ||
-        lowerCommand.contains('switch language')) {
-      _showLanguageDialog();
-    } else if (lowerCommand.contains('english')) {
-      languageProvider.changeLanguage('en');
-      _speak('Language changed to English');
-    } else if (lowerCommand.contains('spanish') ||
-        lowerCommand.contains('español')) {
-      languageProvider.changeLanguage('es');
-      _speak('Idioma cambiado a español');
-    } else if (lowerCommand.contains('french') ||
-        lowerCommand.contains('français')) {
-      languageProvider.changeLanguage('fr');
-      _speak('Langue changée en français');
-    }
-    // Help commands
-    else if (lowerCommand.contains('help') ||
-        lowerCommand.contains('commands') ||
-        lowerCommand.contains('what can i say')) {
-      _speak(
-          'Available commands: start navigation, stop navigation, where am I, change language, help');
-    }
-    // Settings commands
-    else if (lowerCommand.contains('settings') ||
-        lowerCommand.contains('preferences') ||
-        lowerCommand.contains('options')) {
-      _showSettingsDialog();
-    }
-    // Emergency commands
-    else if (lowerCommand.contains('emergency') ||
-        lowerCommand.contains('help me') ||
-        lowerCommand.contains('sos')) {
-      _handleEmergency();
-    }
-  }
-
-  /// Announces the user's current location using text-to-speech
-  void _announceLocation() {
-    final locationProvider =
-        Provider.of<LocationProvider>(context, listen: false);
-    final position = locationProvider.currentPosition;
-    if (position != null) {
-      _speak(
-          'You are at latitude ${position.latitude.toStringAsFixed(4)}, longitude ${position.longitude.toStringAsFixed(4)}');
     }
   }
 
@@ -432,7 +327,7 @@ class _HomeScreenState extends State<HomeScreen> {
         await _screenReader.readEmergencyStatus('Emergency Alert Sent',
             'Your emergency alert has been sent. Help is on the way.');
         // Vibrate in SOS pattern (... --- ...)
-        if (await Vibration.hasVibrator() ?? false) {
+        if (await Vibration.hasVibrator()) {
           for (var i = 0; i < 3; i++) {
             for (var j = 0; j < 3; j++) {
               await Vibration.vibrate(duration: j < 3 ? 200 : 500);
@@ -455,235 +350,235 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Modern user dashboard layout, matching admin dashboard style
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final isAdmin = authProvider.user?.role == 'admin';
+    final user = authProvider.user;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Navigation Assistant'),
-        actions: [
-          // Session Timer Display
-          Consumer<SessionProvider>(
-            builder: (context, sessionProvider, _) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Text(
-                    'Session: ${sessionProvider.formattedDuration}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
-            onPressed: _startListening,
-            tooltip: 'Voice Commands',
-          ),
-          IconButton(
-            icon: const Icon(Icons.language),
-            onPressed: _showLanguageDialog,
-            tooltip: 'Change Language',
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _showSettingsDialog,
-            tooltip: 'Settings',
-          ),
-          if (isAdmin)
-            IconButton(
-              icon: const Icon(Icons.admin_panel_settings),
-              onPressed: () {
-                Navigator.pushNamed(context, '/admin');
-              },
-              tooltip: 'Admin Dashboard',
+      backgroundColor: Colors.grey[100],
+      body: Row(
+        children: [
+          _buildUserSidebar(user),
+          Expanded(
+            child: Column(
+              children: [
+                _buildUserHeader(user),
+                Expanded(child: _buildUserDashboardBody(user)),
+              ],
             ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await authProvider.signOut();
-              if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed('/login');
-              }
-            },
-            tooltip: 'Logout',
           ),
         ],
-      ),
-      body: Consumer2<LocationProvider, DangerZoneProvider>(
-        builder: (context, locationProvider, dangerZoneProvider, _) {
-          final position = locationProvider.currentPosition;
-          final dangerZones = dangerZoneProvider.dangerZones;
-
-          return Stack(
-            children: [
-              // Map view with danger zones
-              if (position != null)
-                Positioned.fill(
-                  child: _buildMapWithDangerZones(position, dangerZones),
-                ),
-
-              // Quick Actions Panel
-              if (_showQuickActions)
-                Positioned(
-                  top: 20,
-                  right: 20,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Quick Actions',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildQuickActionButton(
-                            'Emergency Call',
-                            Icons.emergency,
-                            Colors.red,
-                            () => _handleEmergency(),
-                          ),
-                          _buildQuickActionButton(
-                            'Find Safe Route',
-                            Icons.directions_walk,
-                            Colors.green,
-                            () {/* Implement safe route finding */},
-                          ),
-                          _buildQuickActionButton(
-                            'Report Obstacle',
-                            Icons.warning,
-                            Colors.orange,
-                            () => _showReportObstacleDialog(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-              // Safety Tips Panel
-              if (_showSafetyTips)
-                Positioned(
-                  bottom: 100,
-                  left: 20,
-                  child: Card(
-                    child: Container(
-                      width: 250,
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Safety Tips',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildSafetyTip(
-                            'Stay on marked paths',
-                            Icons.directions_walk,
-                          ),
-                          _buildSafetyTip(
-                            'Keep phone charged',
-                            Icons.battery_full,
-                          ),
-                          _buildSafetyTip(
-                            'Share location with trusted contacts',
-                            Icons.share_location,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-              // Navigation controls
-              Positioned(
-                bottom: 20,
-                right: 20,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FloatingActionButton(
-                      onPressed: () {
-                        setState(() => _showQuickActions = !_showQuickActions);
-                      },
-                      heroTag: 'quickActions',
-                      backgroundColor: Colors.blue,
-                      child: Icon(_showQuickActions ? Icons.close : Icons.add),
-                    ),
-                    const SizedBox(height: 8),
-                    FloatingActionButton(
-                      onPressed: () {
-                        setState(() => _showSafetyTips = !_showSafetyTips);
-                      },
-                      heroTag: 'safetyTips',
-                      backgroundColor: Colors.orange,
-                      child: Icon(_showSafetyTips
-                          ? Icons.close
-                          : Icons.tips_and_updates),
-                    ),
-                    const SizedBox(height: 8),
-                    FloatingActionButton(
-                      onPressed: _toggleNavigation,
-                      heroTag: 'navigation',
-                      backgroundColor:
-                          _isNavigating ? Colors.red : Colors.green,
-                      child:
-                          Icon(_isNavigating ? Icons.stop : Icons.play_arrow),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Location info
-              if (position != null)
-                Positioned(
-                  top: 20,
-                  left: 20,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Lat: ${position.latitude.toStringAsFixed(4)}'),
-                          Text('Lng: ${position.longitude.toStringAsFixed(4)}'),
-                          const SizedBox(height: 4),
-                          Text(
-                            _isNavigating
-                                ? 'Navigation Active'
-                                : 'Navigation Inactive',
-                            style: TextStyle(
-                              color: _isNavigating ? Colors.green : Colors.grey,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          );
-        },
       ),
     );
   }
 
+  // Fix ListTile and SizedBox usage, and ensure all widget parameters are correct
+  Widget _buildUserSidebar(AppUser? user) {
+    return Container(
+      width: 220,
+      color: Colors.blueGrey[900],
+      child: Column(
+        children: [
+          const SizedBox(height: 32),
+          const CircleAvatar(
+            radius: 36,
+            backgroundColor: Colors.blue,
+            child: Icon(Icons.person, size: 40, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            user?.name ?? 'User',
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          const SizedBox(height: 32),
+          const ListTile(
+            leading: Icon(Icons.dashboard, color: Colors.white70),
+            title: Text('Dashboard', style: TextStyle(color: Colors.white70)),
+            selected: true,
+            selectedTileColor: Color(0xFF263238), // Colors.blueGrey[800]
+            onTap: null,
+          ),
+          const ListTile(
+            leading: Icon(Icons.map, color: Colors.white70),
+            title: Text('My Location', style: TextStyle(color: Colors.white70)),
+            onTap: null,
+          ),
+          const ListTile(
+            leading: Icon(Icons.warning, color: Colors.white70),
+            title:
+                Text('Danger Zones', style: TextStyle(color: Colors.white70)),
+            onTap: null,
+          ),
+          const ListTile(
+            leading: Icon(Icons.report, color: Colors.white70),
+            title: Text('My Reports', style: TextStyle(color: Colors.white70)),
+            onTap: null,
+          ),
+          const Spacer(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.redAccent),
+            title:
+                const Text('Logout', style: TextStyle(color: Colors.redAccent)),
+            onTap: () async {
+              await Provider.of<AuthProvider>(context, listen: false).signOut();
+              if (mounted) {
+                Navigator.of(context).pushReplacementNamed('/login');
+              }
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserHeader(AppUser? user) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+      color: Colors.white,
+      child: Row(
+        children: [
+          const Text(
+            'User Dashboard',
+            style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueGrey),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.notifications, color: Colors.blueGrey),
+            onPressed: () {},
+            tooltip: 'Notifications',
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.blueGrey),
+            onPressed: _showSettingsDialog,
+            tooltip: 'Settings',
+          ),
+          SizedBox(width: 12),
+          CircleAvatar(
+            backgroundColor: Colors.blue[200],
+            child: const Icon(Icons.person, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserDashboardBody(AppUser? user) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildUserStatCards(user),
+          SizedBox(height: 24),
+          _buildUserMapSection(),
+          SizedBox(height: 24),
+          _buildUserReportsSection(user),
+          SizedBox(height: 24),
+          _buildUserDangerZonesSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserStatCards(AppUser? user) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildUserStatCard('My Devices', '1', Icons.device_hub, Colors.blue),
+        _buildUserStatCard('Reports', '0', Icons.report, Colors.orange),
+        _buildUserStatCard('Danger Zones', '0', Icons.warning, Colors.red),
+      ],
+    );
+  }
+
+  Widget _buildUserStatCard(
+      String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 32, color: color),
+            SizedBox(height: 8),
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            SizedBox(height: 4),
+            Text(value,
+                style: TextStyle(
+                    fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserMapSection() {
+    return Card(
+      elevation: 4,
+      child: SizedBox(
+        height: 300,
+        child: Consumer2<LocationProvider, DangerZoneProvider>(
+          builder: (context, locationProvider, dangerZoneProvider, _) {
+            final position = locationProvider.currentPosition;
+            final dangerZones = dangerZoneProvider.dangerZones;
+            if (position == null) {
+              return const Center(child: Text('Location not available'));
+            }
+            return _buildMapWithDangerZones(position, dangerZones);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserReportsSection(AppUser? user) {
+    // Placeholder for user reports
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('My Reports',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            const Text('You have not submitted any reports yet.'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserDangerZonesSection() {
+    // Placeholder for danger zones
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Nearby Danger Zones',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            const Text('No danger zones nearby.'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Add the missing _buildMapWithDangerZones method for the user dashboard
   Widget _buildMapWithDangerZones(Position position, List dangerZones) {
     return FlutterMap(
       mapController: _mapController,
@@ -760,104 +655,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildQuickActionButton(
-      String label, IconData icon, Color color, VoidCallback onPressed) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          minimumSize: const Size(200, 40),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSafetyTip(String tip, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: Colors.orange),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              tip,
-              style: const TextStyle(fontSize: 12),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showReportObstacleDialog() {
-    final descriptionController = TextEditingController();
-    String severity = 'medium';
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Report Obstacle'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: descriptionController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: severity,
-              decoration: const InputDecoration(
-                labelText: 'Severity',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'low', child: Text('Low')),
-                DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                DropdownMenuItem(value: 'high', child: Text('High')),
-              ],
-              onChanged: (value) => severity = value!,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final position =
-                  Provider.of<LocationProvider>(context, listen: false)
-                      .currentPosition;
-              if (position != null) {
-                // Implement obstacle reporting
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Obstacle reported successfully'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
-            },
-            child: const Text('Report'),
-          ),
-        ],
-      ),
     );
   }
 

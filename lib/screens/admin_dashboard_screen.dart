@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:visual_impaired_assistive_app/providers/auth_provider.dart';
 import 'package:visual_impaired_assistive_app/providers/dashboard_provider.dart';
+import 'package:visual_impaired_assistive_app/providers/user_report_provider.dart';
 import 'package:visual_impaired_assistive_app/models/statistics_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -1064,101 +1065,85 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  // --- USER REPORTS: Allow users to report issues, and admins see them in real time ---
+  // Add state management for user reports and admin replies
+
+  // 1. Add a provider for user reports (lib/providers/user_report_provider.dart)
+  // 2. Use Consumer<UserReportProvider> in the dashboard for real-time updates
+  // 3. Add reply/response UI and Firestore update logic
+
+  // --- In _buildReportsList, use provider and add reply feature ---
   Widget _buildReportsList(List<UserReport> reports) {
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: reports.length,
-      itemBuilder: (context, index) {
-        final report = reports[index];
-        return Card(
-          margin: const EdgeInsets.only(right: 16),
-          child: Container(
-            width: 200,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  report.userName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+    return Consumer<UserReportProvider>(
+      builder: (context, reportProvider, _) {
+        final userReports = reportProvider.userReports;
+        if (reportProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (userReports.isEmpty) {
+          return const Center(child: Text('No user reports found'));
+        }
+        return ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: userReports.length,
+          itemBuilder: (context, index) {
+            final report = userReports[index];
+            final replyController =
+                TextEditingController(text: report.reply ?? '');
+            return Card(
+              margin: const EdgeInsets.only(right: 16),
+              child: Container(
+                width: 260,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(report.userName ?? 'Unknown',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 8),
+                    Text('Type: ${report.type ?? 'N/A'}'),
+                    Text('Status: ${report.status ?? 'pending'}'),
+                    Text('Message: ${report.message ?? ''}'),
+                    Text(
+                        'Reported: ${report.timestamp != null ? DateFormat.yMMMd().add_Hm().format(report.timestamp!) : ''}'),
+                    const SizedBox(height: 8),
+                    if (report.reply != null && report.reply!.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Text('Admin Reply: ${report.reply}',
+                            style: const TextStyle(color: Colors.blue)),
+                      ),
+                    if (report.status != 'resolved')
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: replyController,
+                              decoration: const InputDecoration(
+                                  hintText: 'Type reply...'),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.send, color: Colors.blue),
+                            onPressed: () async {
+                              await reportProvider.replyToReport(
+                                  report.id, replyController.text);
+                            },
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text('Type: ${report.type}'),
-                Text('Status: ${report.status}'),
-                Text(
-                  'Reported: ${DateFormat.yMMMd().add_Hm().format(report.timestamp)}',
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
-  }
-
-  Widget _buildActiveUsersList(List<ActiveUser> users) {
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: users.length,
-      itemBuilder: (context, index) {
-        final user = users[index];
-        return Card(
-          margin: const EdgeInsets.only(right: 16),
-          child: Container(
-            width: 200,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text('Status: ${user.isOnline ? "Online" : "Offline"}'),
-                Text(
-                  'Last active: ${DateFormat.yMMMd().add_Hm().format(user.lastActive)}',
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  IconData _getReportIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'obstacle':
-        return Icons.warning;
-      case 'emergency':
-        return Icons.emergency;
-      case 'help':
-        return Icons.help;
-      default:
-        return Icons.report_problem;
-    }
-  }
-
-  Color _getReportColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return Colors.orange;
-      case 'in_progress':
-        return Colors.blue;
-      case 'resolved':
-        return Colors.green;
-      case 'urgent':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
   }
 
   void _showNotificationsDialog() {
@@ -1729,4 +1714,50 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         return Colors.grey;
     }
   }
+
+  // Add the missing _buildActiveUsersList method
+  Widget _buildActiveUsersList(List<ActiveUser> users) {
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: users.length,
+      itemBuilder: (context, index) {
+        final user = users[index];
+        return Card(
+          margin: const EdgeInsets.only(right: 16),
+          child: Container(
+            width: 200,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text('Status: \\${user.isOnline ? "Online" : "Offline"}'),
+                Text(
+                  'Last active: \\${DateFormat.yMMMd().add_Hm().format(user.lastActive)}',
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
+
+// In your main.dart or wherever you set up providers:
+// Add ChangeNotifierProvider for UserReportProvider
+// Example (in main.dart):
+// MultiProvider(
+//   providers: [
+//     ...
+//     ChangeNotifierProvider(create: (_) => UserReportProvider()),
+//   ],
+//   child: MyApp(),
+// )
