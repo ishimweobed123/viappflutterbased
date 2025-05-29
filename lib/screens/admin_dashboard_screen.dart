@@ -874,7 +874,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           Text('ID: \\${device.id}'),
                           Text('Status: \\${isOnline ? 'Online' : 'Offline'}'),
                           LinearProgressIndicator(
-                            value: batteryLevel / 100,
+                            value: batteryLevel / 60,
                             backgroundColor: Colors.grey[200],
                             valueColor: AlwaysStoppedAnimation(
                               batteryLevel > 20 ? Colors.green : Colors.red,

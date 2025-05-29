@@ -54,6 +54,7 @@ dependencies:
   firebase_storage: ^12.4.5
   firebase_messaging: ^15.2.5
   fl_chart: ^0.71.0
+  flutter_spinkit: ^5.2.1
 
 dependency_overrides:
   # Fix for js package discontinuation

@@ -18,6 +18,7 @@ import 'package:visual_impaired_assistive_app/services/screen_reader_service.dar
 import 'package:visual_impaired_assistive_app/models/statistics_model.dart';
 import 'package:visual_impaired_assistive_app/models/user_model.dart';
 import 'package:visual_impaired_assistive_app/providers/danger_zone_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// A screen that provides navigation assistance for visually impaired users.
 ///
@@ -380,47 +381,52 @@ class _HomeScreenState extends State<HomeScreen> {
       color: Colors.blueGrey[900],
       child: Column(
         children: [
-          const SizedBox(height: 32),
-          const CircleAvatar(
+          SizedBox(height: 32),
+          CircleAvatar(
             radius: 36,
             backgroundColor: Colors.blue,
             child: Icon(Icons.person, size: 40, color: Colors.white),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Text(
             user?.name ?? 'User',
-            style: const TextStyle(
+            style: TextStyle(
                 color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
           ),
-          const SizedBox(height: 32),
-          const ListTile(
+          SizedBox(height: 32),
+          ListTile(
             leading: Icon(Icons.dashboard, color: Colors.white70),
             title: Text('Dashboard', style: TextStyle(color: Colors.white70)),
             selected: true,
-            selectedTileColor: Color(0xFF263238), // Colors.blueGrey[800]
+            selectedTileColor: Color(0xFF263238),
             onTap: null,
           ),
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.map, color: Colors.white70),
             title: Text('My Location', style: TextStyle(color: Colors.white70)),
-            onTap: null,
+            onTap: () {
+              Navigator.of(context).pushNamed('/my_location');
+            },
           ),
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.warning, color: Colors.white70),
             title:
                 Text('Danger Zones', style: TextStyle(color: Colors.white70)),
-            onTap: null,
+            onTap: () {
+              Navigator.of(context).pushNamed('/danger_zones');
+            },
           ),
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.report, color: Colors.white70),
             title: Text('My Reports', style: TextStyle(color: Colors.white70)),
-            onTap: null,
+            onTap: () {
+              Navigator.of(context).pushNamed('/my_reports');
+            },
           ),
-          const Spacer(),
+          Spacer(),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.redAccent),
-            title:
-                const Text('Logout', style: TextStyle(color: Colors.redAccent)),
+            leading: Icon(Icons.logout, color: Colors.redAccent),
+            title: Text('Logout', style: TextStyle(color: Colors.redAccent)),
             onTap: () async {
               await Provider.of<AuthProvider>(context, listen: false).signOut();
               if (mounted) {
@@ -428,7 +434,7 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
         ],
       ),
     );
@@ -486,17 +492,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildUserStatCards(AppUser? user) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildUserStatCard('My Devices', '1', Icons.device_hub, Colors.blue),
-        _buildUserStatCard('Reports', '0', Icons.report, Colors.orange),
-        _buildUserStatCard('Danger Zones', '0', Icons.warning, Colors.red),
-      ],
-    );
-  }
-
   Widget _buildUserStatCard(
       String title, String value, IconData icon, Color color) {
     return Card(
@@ -507,11 +502,11 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 32, color: color),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(title,
                 style:
                     const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(value,
                 style: TextStyle(
                     fontSize: 24, fontWeight: FontWeight.bold, color: color)),
@@ -519,6 +514,49 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildUserStatCards(AppUser? user) {
+    return FutureBuilder<Map<String, int>>(
+      future: _fetchUserStats(user),
+      builder: (context, snapshot) {
+        final stats =
+            snapshot.data ?? {'devices': 0, 'reports': 0, 'dangerZones': 0};
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildUserStatCard('My Devices', stats['devices'].toString(),
+                Icons.device_hub, Colors.blue),
+            _buildUserStatCard('Reports', stats['reports'].toString(),
+                Icons.report, Colors.orange),
+            _buildUserStatCard('Danger Zones', stats['dangerZones'].toString(),
+                Icons.warning, Colors.red),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<Map<String, int>> _fetchUserStats(AppUser? user) async {
+    if (user == null) return {'devices': 0, 'reports': 0, 'dangerZones': 0};
+    final firestore = FirebaseFirestore.instance;
+    final devicesSnap = await firestore
+        .collection('devices')
+        .where('userId', isEqualTo: user.id)
+        .get();
+    final reportsSnap = await firestore
+        .collection('reports')
+        .where('userId', isEqualTo: user.id)
+        .get();
+    final dangerZonesSnap = await firestore
+        .collection('danger_zones')
+        .where('affectedUsers', arrayContains: user.id)
+        .get();
+    return {
+      'devices': devicesSnap.size,
+      'reports': reportsSnap.size,
+      'dangerZones': dangerZonesSnap.size,
+    };
   }
 
   Widget _buildUserMapSection() {
@@ -541,40 +579,115 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildUserReportsSection(AppUser? user) {
-    // Placeholder for user reports
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('My Reports',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            const Text('You have not submitted any reports yet.'),
-          ],
-        ),
-      ),
+    if (user == null) {
+      return const SizedBox();
+    }
+    return FutureBuilder(
+      future: FirebaseFirestore.instance
+          .collection('reports')
+          .where('userId', isEqualTo: user.id)
+          .orderBy('timestamp', descending: true)
+          .limit(5)
+          .get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || (snapshot.data as dynamic).docs.isEmpty) {
+          return Card(
+            elevation: 4,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text('My Reports',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 8),
+                  Text('You have not submitted any reports yet.'),
+                ],
+              ),
+            ),
+          );
+        }
+        final docs = (snapshot.data as dynamic).docs;
+        return Card(
+          elevation: 4,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('My Reports',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ...docs.map<Widget>((doc) => ListTile(
+                      leading: const Icon(Icons.report, color: Colors.orange),
+                      title: Text(doc['type'] ?? 'Report'),
+                      subtitle: Text(doc['description'] ?? ''),
+                      trailing: Text(doc['status'] ?? 'pending'),
+                    )),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildUserDangerZonesSection() {
-    // Placeholder for danger zones
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Nearby Danger Zones',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            const Text('No danger zones nearby.'),
-          ],
-        ),
-      ),
+    return Consumer<DangerZoneProvider>(
+      builder: (context, provider, _) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (provider.dangerZones.isEmpty) {
+          return Card(
+            elevation: 4,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text('Nearby Danger Zones',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 8),
+                  Text('No danger zones nearby.'),
+                ],
+              ),
+            ),
+          );
+        }
+        return Card(
+          elevation: 4,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Nearby Danger Zones',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ...provider.dangerZones.take(5).map((zone) => ListTile(
+                      leading: Icon(Icons.warning,
+                          color: zone.severity == 'high'
+                              ? Colors.red
+                              : zone.severity == 'medium'
+                                  ? Colors.orange
+                                  : Colors.yellow),
+                      title: Text(zone.name),
+                      subtitle: Text(zone.description),
+                      trailing: Text(zone.severity.toUpperCase()),
+                    )),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

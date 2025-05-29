@@ -4,6 +4,7 @@ import 'package:visual_impaired_assistive_app/providers/auth_provider.dart';
 import 'package:visual_impaired_assistive_app/screens/auth/register_screen.dart';
 import 'package:visual_impaired_assistive_app/screens/home_screen.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -114,9 +115,37 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _isLoading ? null : _login,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  elevation: 4,
+                ),
                 child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text('Login'),
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          SpinKitPulse(
+                            color: Colors.white,
+                            size: 32.0,
+                            duration: Duration(milliseconds: 700),
+                          ),
+                          SizedBox(width: 16),
+                          Text(
+                            'Logging in...',
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      )
+                    : const Text(
+                        'Login',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
               ),
               const SizedBox(height: 16),
               TextButton(
