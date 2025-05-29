@@ -17,6 +17,7 @@ import 'package:visual_impaired_assistive_app/services/emergency_service.dart';
 import 'package:visual_impaired_assistive_app/services/screen_reader_service.dart';
 import 'package:visual_impaired_assistive_app/models/statistics_model.dart';
 import 'package:visual_impaired_assistive_app/models/user_model.dart';
+import 'package:visual_impaired_assistive_app/providers/danger_zone_provider.dart';
 
 /// A screen that provides navigation assistance for visually impaired users.
 ///
@@ -514,16 +515,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Consumer<LocationProvider>(
-        builder: (context, locationProvider, _) {
+      body: Consumer2<LocationProvider, DangerZoneProvider>(
+        builder: (context, locationProvider, dangerZoneProvider, _) {
           final position = locationProvider.currentPosition;
+          final dangerZones = dangerZoneProvider.dangerZones;
 
           return Stack(
             children: [
-              // Map view
+              // Map view with danger zones
               if (position != null)
                 Positioned.fill(
-                  child: _buildMap(position),
+                  child: _buildMapWithDangerZones(position, dangerZones),
                 ),
 
               // Quick Actions Panel
@@ -682,10 +684,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMap(Position position) {
+  Widget _buildMapWithDangerZones(Position position, List dangerZones) {
     return FlutterMap(
       mapController: _mapController,
-      options: MapOptions(), // Use default options for compatibility
+      options: MapOptions(),
       children: [
         TileLayer(
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -740,6 +742,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
+            ...dangerZones.map((zone) => Marker(
+                  point:
+                      LatLng(zone.location.latitude, zone.location.longitude),
+                  width: 40,
+                  height: 40,
+                  child: Icon(
+                    Icons.warning,
+                    color: zone.severity == 'high'
+                        ? Colors.red
+                        : zone.severity == 'medium'
+                            ? Colors.orange
+                            : Colors.yellow,
+                    size: 32,
+                  ),
+                )),
           ],
         ),
       ],

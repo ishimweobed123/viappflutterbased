@@ -48,7 +48,7 @@ dependencies:
   intl: ^0.20.2
   firebase_core: ^3.13.0
   firebase_auth: ^5.5.2
-  cloud_firestore: ^5.6.6
+  cloud_firestore: ^5.6.8
   uuid: ^4.3.3
   speech_to_text: ^7.0.0
   firebase_storage: ^12.4.5

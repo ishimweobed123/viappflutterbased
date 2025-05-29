@@ -10,6 +10,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 
+// Modern, professional admin dashboard with sidebar navigation and improved UI
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
 
@@ -20,10 +21,17 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   int _selectedIndex = 0;
-  bool _showWeeklyStats = true;
+  final List<String> _sections = [
+    'Overview',
+    'Users',
+    'Devices',
+    'Danger Zones',
+  ];
+
+  // Add missing fields for admin/user search and access control
+  bool _isAdmin = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  bool _isAdmin = false;
 
   @override
   void initState() {
@@ -37,7 +45,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -65,6 +72,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 
+  // Add missing _handleNonAdminAccess method
   void _handleNonAdminAccess() {
     if (mounted) {
       Navigator.of(context).pushReplacementNamed('/home');
@@ -176,102 +184,127 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.analytics),
-            onPressed: () =>
-                setState(() => _showWeeklyStats = !_showWeeklyStats),
-            tooltip: 'Toggle Statistics View',
+  Widget _buildSidebar() {
+    return Container(
+      width: 220,
+      color: Colors.blueGrey[900],
+      child: Column(
+        children: [
+          const SizedBox(height: 32),
+          CircleAvatar(
+            radius: 36,
+            backgroundColor: Colors.blue[300],
+            child: const Icon(Icons.admin_panel_settings,
+                size: 40, color: Colors.white),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              Provider.of<DashboardProvider>(context, listen: false)
-                  .loadDashboardStats();
-            },
-            tooltip: 'Refresh Data',
+          const SizedBox(height: 12),
+          Text(
+            'Admin',
+            style: TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
           ),
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () => _showNotificationsDialog(),
-            tooltip: 'System Notifications',
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => _showSettingsDialog(),
-            tooltip: 'Dashboard Settings',
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
+          const SizedBox(height: 32),
+          ...List.generate(
+              _sections.length,
+              (i) => ListTile(
+                    leading: Icon(
+                      i == 0
+                          ? Icons.dashboard
+                          : i == 1
+                              ? Icons.people
+                              : i == 2
+                                  ? Icons.device_hub
+                                  : Icons.warning,
+                      color: _selectedIndex == i
+                          ? Colors.blue[200]
+                          : Colors.white70,
+                    ),
+                    title: Text(
+                      _sections[i],
+                      style: TextStyle(
+                        color: _selectedIndex == i
+                            ? Colors.blue[200]
+                            : Colors.white70,
+                        fontWeight: _selectedIndex == i
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                    selected: _selectedIndex == i,
+                    selectedTileColor: Colors.blueGrey[800],
+                    onTap: () => setState(() => _selectedIndex = i),
+                  )),
+          const Spacer(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.redAccent),
+            title:
+                const Text('Logout', style: TextStyle(color: Colors.redAccent)),
+            onTap: () async {
               await Provider.of<AuthProvider>(context, listen: false).signOut();
               if (mounted) {
                 Navigator.of(context).pushReplacementNamed('/login');
               }
             },
-            tooltip: 'Logout',
           ),
-        ],
-      ),
-      body: _buildBody(),
-      floatingActionButton: _buildFloatingActionButton(),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Overview',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Users',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.device_hub),
-            label: 'Devices',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.warning),
-            label: 'Danger Zones',
-          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildFloatingActionButton() {
-    switch (_selectedIndex) {
-      case 0:
-        return const SizedBox.shrink();
-      case 1:
-        return FloatingActionButton(
-          onPressed: _showCreateUserDialog,
-          heroTag: 'addUser',
-          child: const Icon(Icons.person_add),
-        );
-      case 2:
-        return FloatingActionButton(
-          onPressed: _showAddDeviceDialog,
-          heroTag: 'addDevice',
-          child: const Icon(Icons.add_circle),
-        );
-      case 3:
-        return FloatingActionButton(
-          onPressed: () => _showAddDangerZoneDialog(),
-          heroTag: 'addDanger',
-          backgroundColor: Colors.red,
-          child: const Icon(Icons.warning),
-        );
-      default:
-        return const SizedBox.shrink();
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      body: Row(
+        children: [
+          _buildSidebar(),
+          Expanded(
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(child: _buildBody()),
+              ],
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: _buildFloatingActionButton(),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+      color: Colors.white,
+      child: Row(
+        children: [
+          Text(
+            _sections[_selectedIndex],
+            style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueGrey),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.notifications, color: Colors.blueGrey),
+            onPressed: _showNotificationsDialog,
+            tooltip: 'System Notifications',
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.blueGrey),
+            onPressed: _showSettingsDialog,
+            tooltip: 'Dashboard Settings',
+          ),
+          const SizedBox(width: 12),
+          CircleAvatar(
+            backgroundColor: Colors.blue[200],
+            child: const Icon(Icons.person, color: Colors.white),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildBody() {
@@ -523,6 +556,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               Icons.sd_storage,
               Colors.blue,
             ),
+            // Custom: Add more system health indicators as needed
+            _buildHealthIndicator(
+              'Active Admins',
+              '1', // You can fetch and display the real count
+              Icons.admin_panel_settings,
+              Colors.purple,
+            ),
+            _buildHealthIndicator(
+              'Pending Reports',
+              '0', // You can fetch and display the real count
+              Icons.report,
+              Colors.redAccent,
+            ),
           ],
         ),
       ),
@@ -594,7 +640,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             stream: _firestore.collection('users').orderBy('name').snapshots(),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
+                return Center(child: Text('Error: \\${snapshot.error}'));
               }
 
               if (!snapshot.hasData) {
@@ -634,7 +680,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(userData['email'] ?? 'No email'),
-                          Text('Role: ${userData['role'] ?? 'user'}'),
+                          Text('Role: \\${userData['role'] ?? 'user'}'),
                         ],
                       ),
                       trailing: PopupMenuButton(
@@ -669,6 +715,89 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showEditUserDialog(DocumentSnapshot user) {
+    final nameController = TextEditingController(text: user['name']);
+    final emailController = TextEditingController(text: user['email']);
+    String role = user['role'] ?? 'user';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit User'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            DropdownButtonFormField<String>(
+              value: role,
+              items: const [
+                DropdownMenuItem(value: 'user', child: Text('User')),
+                DropdownMenuItem(value: 'admin', child: Text('Admin')),
+              ],
+              onChanged: (value) => role = value!,
+              decoration: const InputDecoration(labelText: 'Role'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await _firestore.collection('users').doc(user.id).update({
+                'name': nameController.text,
+                'email': emailController.text,
+                'role': role,
+              });
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteUserDialog(String userId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete User'),
+        content: const Text('Are you sure you want to delete this user?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await Provider.of<DashboardProvider>(context, listen: false)
+                  .deleteUser(userId);
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -741,8 +870,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('ID: ${device.id}'),
-                          Text('Status: ${isOnline ? 'Online' : 'Offline'}'),
+                          Text('ID: \\${device.id}'),
+                          Text('Status: \\${isOnline ? 'Online' : 'Offline'}'),
                           LinearProgressIndicator(
                             value: batteryLevel / 100,
                             backgroundColor: Colors.grey[200],
@@ -750,7 +879,33 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               batteryLevel > 20 ? Colors.green : Colors.red,
                             ),
                           ),
-                          Text('Battery: $batteryLevel%'),
+                          Text('Battery: \\${batteryLevel}%'),
+                          FutureBuilder<DocumentSnapshot>(
+                            future: data['userId'] != null
+                                ? _firestore
+                                    .collection('users')
+                                    .doc(data['userId'])
+                                    .get()
+                                : null,
+                            builder: (context, userSnapshot) {
+                              if (data['userId'] == null) {
+                                return const Text('Assigned User: None');
+                              }
+                              if (userSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Text('Assigned User: ...');
+                              }
+                              if (userSnapshot.hasError ||
+                                  !userSnapshot.hasData ||
+                                  !userSnapshot.data!.exists) {
+                                return const Text('Assigned User: Not found');
+                              }
+                              final userData = userSnapshot.data!.data()
+                                  as Map<String, dynamic>;
+                              return Text(
+                                  'Assigned User: \\${userData['name'] ?? userData['email'] ?? data['userId']}');
+                            },
+                          ),
                         ],
                       ),
                       trailing: PopupMenuButton(
@@ -808,9 +963,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               flex: 2,
               child: FlutterMap(
                 options: const MapOptions(
-                 // center: LatLng(-1.9437, 30.0594), // Default center (Kigali)
-                 // zoom: 13.0,
-                ),
+                    // center: LatLng(-1.9437, 30.0594), // Default center (Kigali)
+                    // zoom: 13.0,
+                    ),
                 children: [
                   TileLayer(
                     urlTemplate:
@@ -1006,179 +1161,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 
-  void _showEditUserDialog(DocumentSnapshot user) {
-    final nameController = TextEditingController(text: user['name']);
-    final emailController = TextEditingController(text: user['email']);
-    String role = user['role'] ?? 'user';
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit User'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
-            ),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            DropdownButtonFormField<String>(
-              value: role,
-              items: const [
-                DropdownMenuItem(value: 'user', child: Text('User')),
-                DropdownMenuItem(value: 'admin', child: Text('Admin')),
-              ],
-              onChanged: (value) => role = value!,
-              decoration: const InputDecoration(labelText: 'Role'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await _firestore.collection('users').doc(user.id).update({
-                'name': nameController.text,
-                'email': emailController.text,
-                'role': role,
-              });
-              if (mounted) {
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteUserDialog(String userId) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete User'),
-        content: const Text('Are you sure you want to delete this user?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await Provider.of<DashboardProvider>(context, listen: false)
-                  .deleteUser(userId);
-              if (mounted) {
-                Navigator.pop(context);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentActivities() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _firestore
-          .collection('activities')
-          .orderBy('timestamp', descending: true)
-          .limit(5)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SizedBox.shrink();
-        }
-
-        return Card(
-          elevation: 4,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Recent Activities',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ...snapshot.data!.docs.map((activity) {
-                  return ListTile(
-                    title: Text(activity['type'] ?? 'Unknown Activity'),
-                    subtitle: Text(
-                      DateFormat.yMMMd().add_Hm().format(
-                            (activity['timestamp'] as Timestamp).toDate(),
-                          ),
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(activity['status'] as String?),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        activity['status'] ?? 'N/A',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Color _getStatusColor(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return Colors.green;
-      case 'in progress':
-        return Colors.orange;
-      case 'failed':
-        return Colors.red;
-      case 'pending':
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Color _getSeverityColor(String severity) {
-    switch (severity.toLowerCase()) {
-      case 'high':
-        return Colors.red;
-      case 'medium':
-        return Colors.orange;
-      case 'low':
-        return Colors.yellow;
-      default:
-        return Colors.grey;
-    }
-  }
-
   void _showNotificationsDialog() {
     showDialog(
       context: context,
@@ -1361,8 +1343,48 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              // Add danger zone logic
-              Navigator.pop(context);
+              if (locationController.text.isEmpty ||
+                  descriptionController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please fill in all fields'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              try {
+                await _firestore.collection('dangerZones').add({
+                  'location': locationController.text,
+                  'description': descriptionController.text,
+                  'severity': severity,
+                  'incidents': 1,
+                  'lastReported': FieldValue.serverTimestamp(),
+                  'coordinates': {
+                    'latitude': 0.0,
+                    'longitude': 0.0
+                  }, // TODO: Let admin pick on map
+                  'createdAt': FieldValue.serverTimestamp(),
+                });
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Danger zone added successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error adding danger zone: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             child: const Text('Add'),
           ),
@@ -1374,6 +1396,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void _showAddDeviceDialog() {
     final nameController = TextEditingController();
     final deviceIdController = TextEditingController();
+    String? selectedUserId;
 
     showDialog(
       context: context,
@@ -1398,6 +1421,33 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   border: OutlineInputBorder(),
                 ),
               ),
+              const SizedBox(height: 16),
+              StreamBuilder<QuerySnapshot>(
+                stream:
+                    _firestore.collection('users').orderBy('name').snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const CircularProgressIndicator();
+                  }
+                  final users = snapshot.data!.docs;
+                  return DropdownButtonFormField<String>(
+                    value: selectedUserId,
+                    decoration: const InputDecoration(
+                      labelText: 'Assign to User',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: users.map((userDoc) {
+                      final data = userDoc.data() as Map<String, dynamic>;
+                      return DropdownMenuItem(
+                        value: userDoc.id,
+                        child:
+                            Text(data['name'] ?? data['email'] ?? userDoc.id),
+                      );
+                    }).toList(),
+                    onChanged: (value) => selectedUserId = value,
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -1409,10 +1459,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ElevatedButton(
             onPressed: () async {
               if (nameController.text.isEmpty ||
-                  deviceIdController.text.isEmpty) {
+                  deviceIdController.text.isEmpty ||
+                  selectedUserId == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Please fill in all fields'),
+                    content:
+                        Text('Please fill in all fields and select a user'),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -1427,6 +1479,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   'batteryLevel': 100,
                   'lastSeen': FieldValue.serverTimestamp(),
                   'createdAt': FieldValue.serverTimestamp(),
+                  'userId': selectedUserId,
                 });
 
                 if (mounted) {
@@ -1569,5 +1622,111 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ],
       ),
     );
+  }
+
+  // Add a basic _buildFloatingActionButton to resolve the error
+  Widget _buildFloatingActionButton() {
+    if (_selectedIndex == 1 && _isAdmin) {
+      return FloatingActionButton(
+        onPressed: _showCreateUserDialog,
+        child: const Icon(Icons.add),
+        tooltip: 'Add User',
+      );
+    }
+    // Return an empty SizedBox if no FAB is needed
+    return const SizedBox.shrink();
+  }
+
+  // Add the missing _buildRecentActivities method
+  Widget _buildRecentActivities() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestore
+          .collection('activities')
+          .orderBy('timestamp', descending: true)
+          .limit(5)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+        return Card(
+          elevation: 4,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Recent Activities',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ...snapshot.data!.docs.map((activity) {
+                  return ListTile(
+                    title: Text(activity['type'] ?? 'Unknown Activity'),
+                    subtitle: Text(
+                      activity['timestamp'] != null
+                          ? DateFormat.yMMMd().add_Hm().format(
+                                (activity['timestamp'] as Timestamp).toDate(),
+                              )
+                          : 'No timestamp',
+                    ),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(activity['status'] as String?),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        activity['status'] ?? 'N/A',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Add the missing _getSeverityColor method
+  Color _getSeverityColor(String severity) {
+    switch (severity.toLowerCase()) {
+      case 'high':
+        return Colors.red;
+      case 'medium':
+        return Colors.orange;
+      case 'low':
+        return Colors.yellow;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Add the missing _getStatusColor method
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'in_progress':
+        return Colors.blue;
+      case 'resolved':
+        return Colors.green;
+      case 'urgent':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:visual_impaired_assistive_app/providers/auth_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,10 +35,27 @@ class _LoginScreenState extends State<LoginScreen> {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         await authProvider.signIn(
           email: _emailController.text.trim(),
-          password: _passwordController.text,
+          password: _passwordController.text.trim(),
         );
 
-        if (mounted) {
+        // Get the current user's UID from FirebaseAuth
+        final firebaseUser = authProvider.firebaseUser;
+        final uid = firebaseUser?.uid;
+        if (uid == null || uid.isEmpty) {
+          throw Exception('Failed to get user ID after login.');
+        }
+
+        // Fetch user role from Firestore using UID
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
+        final role = userDoc.data()?['role'] ?? 'user';
+
+        if (!mounted) return;
+        if (role == 'admin') {
+          Navigator.of(context).pushReplacementNamed('/admin');
+        } else {
           Navigator.of(context).pushReplacementNamed('/home');
         }
       } catch (e) {

@@ -16,7 +16,6 @@ import 'package:visual_impaired_assistive_app/providers/dashboard_provider.dart'
 import 'package:visual_impaired_assistive_app/providers/session_provider.dart';
 import 'package:visual_impaired_assistive_app/providers/danger_zone_provider.dart';
 import 'package:visual_impaired_assistive_app/screens/danger_zones_screen.dart';
-//import 'package:visual_impaired_assistive_app/utils/firebase_web_utils.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,7 +63,6 @@ class MyApp extends StatelessWidget {
           },
         ),
         routes: {
-          
           '/home': (context) => const HomeScreen(),
           '/login': (context) => const LoginScreen(),
           '/admin': (context) => const AdminDashboardScreen(),

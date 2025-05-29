@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:1095501567322:android:1fb857ab716ff719ab0f63",
+        "android_client_info": {
+          "package_name": "com.example.visual_impaired_assistive_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmJ8hPkm-iSL5XrI0VjMuM5isNJNnHjKg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:1095501567322:android:cf4939e5fe013a58ab0f63",
         "android_client_info": {
           "package_name": "com.visualimpaired.assistant"

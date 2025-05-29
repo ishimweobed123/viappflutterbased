@@ -15,10 +15,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.macOS:
         return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -32,40 +29,49 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAmJ8hPkm-iSL5XrI0VjMuM5isNJNnHjKg',
-    appId: '1:1095501567322:web:cf4939e5fe013a58ab0f63',
+    apiKey: 'AIzaSyD_y1H9iwi5lOeqQkIjU9jiObBZlXF19Gk',
+    appId: '1:1095501567322:web:9d2fe23887220f46ab0f63',
     messagingSenderId: '1095501567322',
     projectId: 'visual-impaired-assistant',
     authDomain: 'visual-impaired-assistant.firebaseapp.com',
     storageBucket: 'visual-impaired-assistant.firebasestorage.app',
-    measurementId: 'G-MEASUREMENT_ID',
+    measurementId: 'G-PJEEYK3JHW',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAmJ8hPkm-iSL5XrI0VjMuM5isNJNnHjKg',
-    appId: '1:1095501567322:android:cf4939e5fe013a58ab0f63',
+    appId: '1:1095501567322:android:1fb857ab716ff719ab0f63',
     messagingSenderId: '1095501567322',
     projectId: 'visual-impaired-assistant',
     storageBucket: 'visual-impaired-assistant.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAmJ8hPkm-iSL5XrI0VjMuM5isNJNnHjKg',
-    appId: '1:1095501567322:ios:cf4939e5fe013a58ab0f63',
+    apiKey: 'AIzaSyDMIkzrjnhJQYxXZ-WVMZCtNhCHU29zfqY',
+    appId: '1:1095501567322:ios:444d5bd664b68135ab0f63',
     messagingSenderId: '1095501567322',
     projectId: 'visual-impaired-assistant',
     storageBucket: 'visual-impaired-assistant.firebasestorage.app',
-    iosClientId: '1095501567322-ios.apps.googleusercontent.com',
-    iosBundleId: 'com.visualimpaired.assistant',
+    iosBundleId: 'com.example.visualImpairedAssistiveApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAmJ8hPkm-iSL5XrI0VjMuM5isNJNnHjKg',
-    appId: '1:1095501567322:macos:cf4939e5fe013a58ab0f63',
+    apiKey: 'AIzaSyDMIkzrjnhJQYxXZ-WVMZCtNhCHU29zfqY',
+    appId: '1:1095501567322:ios:444d5bd664b68135ab0f63',
     messagingSenderId: '1095501567322',
     projectId: 'visual-impaired-assistant',
     storageBucket: 'visual-impaired-assistant.firebasestorage.app',
-    iosClientId: '1095501567322-ios.apps.googleusercontent.com',
-    iosBundleId: 'com.visualimpaired.assistant',
+    iosBundleId: 'com.example.visualImpairedAssistiveApp',
   );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyD_y1H9iwi5lOeqQkIjU9jiObBZlXF19Gk',
+    appId: '1:1095501567322:web:e0f775e230c40d96ab0f63',
+    messagingSenderId: '1095501567322',
+    projectId: 'visual-impaired-assistant',
+    authDomain: 'visual-impaired-assistant.firebaseapp.com',
+    storageBucket: 'visual-impaired-assistant.firebasestorage.app',
+    measurementId: 'G-9K23D5V851',
+  );
+
 }
