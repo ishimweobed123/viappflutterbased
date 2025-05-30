@@ -17,6 +17,9 @@ import 'package:visual_impaired_assistive_app/providers/session_provider.dart';
 import 'package:visual_impaired_assistive_app/providers/danger_zone_provider.dart';
 import 'package:visual_impaired_assistive_app/screens/danger_zones_screen.dart';
 import 'package:visual_impaired_assistive_app/providers/user_report_provider.dart';
+import 'package:visual_impaired_assistive_app/screens/my_location_screen.dart';
+import 'package:visual_impaired_assistive_app/screens/user_danger_zones_screen.dart';
+import 'package:visual_impaired_assistive_app/screens/my_reports_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -75,6 +78,9 @@ class MyApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/admin': (context) => const AdminDashboardScreen(),
           '/danger-zones': (context) => const DangerZonesScreen(),
+          '/my_location': (context) => const MyLocationScreen(),
+          '/danger_zones': (context) => const UserDangerZonesScreen(),
+          '/my_reports': (context) => const MyReportsScreen(),
         },
       ),
     );

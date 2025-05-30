@@ -26,7 +26,8 @@ service cloud.firestore {
 
     // Devices collection
     match /devices/{deviceId} {
-      allow read: if request.auth != null;
+      // Admins can read/write all devices; users can only read their own devices
+      allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       allow write: if isAdmin();
     }
 
