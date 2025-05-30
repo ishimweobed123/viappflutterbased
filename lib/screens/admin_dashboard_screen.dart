@@ -963,16 +963,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Expanded(
               flex: 2,
               child: FlutterMap(
-                options: const MapOptions(
-                    // center: LatLng(-1.9437, 30.0594), // Default center (Kigali)
-                    // zoom: 13.0,
-                    ),
+                options: const MapOptions(),
                 children: [
                   TileLayer(
-                    urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName:
-                        'com.example.visual_impaired_assistive_app',
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.visual_impaired_assistive_app',
                     tileProvider: CancellableNetworkTileProvider(),
                   ),
                   MarkerLayer(
@@ -995,34 +990,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ],
               ),
             ),
-            Expanded(
-              flex: 1,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                child: DefaultTabController(
-                  length: 3,
-                  child: Column(
-                    children: [
-                      const TabBar(
-                        tabs: [
-                          Tab(text: 'Danger Zones'),
-                          Tab(text: 'Reports'),
-                          Tab(text: 'Active Users'),
-                        ],
-                      ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            _buildDangerZonesList(stats.dangerZones),
-                            _buildReportsList(stats.userReports),
-                            _buildActiveUsersList(stats.activeUserLocations),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            // Show the list of danger zones below the map
+            Container(
+              height: 220,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: _buildDangerZonesList(stats.dangerZones),
             ),
           ],
         );
@@ -1057,6 +1029,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 Text(
                   'Last reported: ${DateFormat.yMMMd().format(zone.lastReported)}',
                 ),
+                if (_isAdmin) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.blue),
+                        tooltip: 'Edit',
+                        onPressed: () => _showEditDangerZoneDialog(zone),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        tooltip: 'Delete',
+                        onPressed: () => _showDeleteDangerZoneDialog(zone),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -1065,117 +1054,48 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  // --- USER REPORTS: Allow users to report issues, and admins see them in real time ---
-  // Add state management for user reports and admin replies
+  void _showEditDangerZoneDialog(DangerZone zone) {
+    final locationController = TextEditingController(text: zone.location);
+    final descriptionController = TextEditingController(text: zone.description);
+    String severity = zone.severity;
 
-  // 1. Add a provider for user reports (lib/providers/user_report_provider.dart)
-  // 2. Use Consumer<UserReportProvider> in the dashboard for real-time updates
-  // 3. Add reply/response UI and Firestore update logic
-
-  // --- In _buildReportsList, use provider and add reply feature ---
-  Widget _buildReportsList(List<UserReport> reports) {
-    return Consumer<UserReportProvider>(
-      builder: (context, reportProvider, _) {
-        final userReports = reportProvider.userReports;
-        if (reportProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (userReports.isEmpty) {
-          return const Center(child: Text('No user reports found'));
-        }
-        return ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: userReports.length,
-          itemBuilder: (context, index) {
-            final report = userReports[index];
-            final replyController =
-                TextEditingController(text: report.reply ?? '');
-            return Card(
-              margin: const EdgeInsets.only(right: 16),
-              child: Container(
-                width: 260,
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(report.userName ?? 'Unknown',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
-                    const SizedBox(height: 8),
-                    Text('Type: ${report.type ?? 'N/A'}'),
-                    Text('Status: ${report.status ?? 'pending'}'),
-                    Text('Message: ${report.message ?? ''}'),
-                    Text(
-                        'Reported: ${report.timestamp != null ? DateFormat.yMMMd().add_Hm().format(report.timestamp!) : ''}'),
-                    const SizedBox(height: 8),
-                    if (report.reply != null && report.reply!.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                            color: Colors.blue[50],
-                            borderRadius: BorderRadius.circular(8)),
-                        child: Text('Admin Reply: ${report.reply}',
-                            style: const TextStyle(color: Colors.blue)),
-                      ),
-                    if (report.status != 'resolved')
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: replyController,
-                              decoration: const InputDecoration(
-                                  hintText: 'Type reply...'),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.send, color: Colors.blue),
-                            onPressed: () async {
-                              await reportProvider.replyToReport(
-                                  report.id, replyController.text);
-                            },
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showNotificationsDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('System Notifications'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView(
-            shrinkWrap: true,
+        title: const Text('Edit Danger Zone'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _buildNotificationItem(
-                'New User Registration',
-                'A new user has registered',
-                DateTime.now().subtract(const Duration(minutes: 5)),
-                Icons.person_add,
-                Colors.blue,
+              TextField(
+                controller: locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Location',
+                  border: OutlineInputBorder(),
+                ),
               ),
-              _buildNotificationItem(
-                'System Update',
-                'New version available',
-                DateTime.now().subtract(const Duration(hours: 2)),
-                Icons.system_update,
-                Colors.orange,
+              const SizedBox(height: 16),
+              TextField(
+                controller: descriptionController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  border: OutlineInputBorder(),
+                ),
               ),
-              _buildNotificationItem(
-                'Security Alert',
-                'Multiple failed login attempts detected',
-                DateTime.now().subtract(const Duration(hours: 6)),
-                Icons.security,
-                Colors.red,
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: severity,
+                decoration: const InputDecoration(
+                  labelText: 'Severity',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'low', child: Text('Low')),
+                  DropdownMenuItem(value: 'medium', child: Text('Medium')),
+                  DropdownMenuItem(value: 'high', child: Text('High')),
+                ],
+                onChanged: (value) => severity = value!,
               ),
             ],
           ),
@@ -1183,92 +1103,94 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
-              // Mark all as read
-              Navigator.pop(context);
+            onPressed: () async {
+              if (locationController.text.isEmpty || descriptionController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please fill in all fields'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              try {
+                await _firestore.collection('danger_zones').doc(zone.id).update({
+                  'location': locationController.text,
+                  'description': descriptionController.text,
+                  'severity': severity,
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Danger zone updated successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  // Refresh dashboard stats after editing
+                  Provider.of<DashboardProvider>(context, listen: false).loadDashboardStats();
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error updating danger zone: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
-            child: const Text('Mark All as Read'),
+            child: const Text('Save'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNotificationItem(
-      String title, String message, DateTime time, IconData icon, Color color) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: color.withOpacity(0.1),
-        child: Icon(icon, color: color),
-      ),
-      title: Text(title),
-      subtitle: Text(message),
-      trailing: Text(
-        DateFormat.jm().format(time),
-        style: TextStyle(color: Colors.grey[600]),
-      ),
-    );
-  }
-
-  void _showSettingsDialog() {
+  void _showDeleteDangerZoneDialog(DangerZone zone) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dashboard Settings'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.notifications),
-              title: const Text('Email Notifications'),
-              trailing: Switch(
-                value: true,
-                onChanged: (value) {
-                  // Implement notification settings
-                },
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.security),
-              title: const Text('Two-Factor Authentication'),
-              trailing: Switch(
-                value: false,
-                onChanged: (value) {
-                  // Implement 2FA settings
-                },
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.language),
-              title: const Text('Language'),
-              trailing: DropdownButton<String>(
-                value: 'English',
-                items: const [
-                  DropdownMenuItem(value: 'English', child: Text('English')),
-                  DropdownMenuItem(value: 'Spanish', child: Text('Spanish')),
-                  DropdownMenuItem(value: 'French', child: Text('French')),
-                ],
-                onChanged: (value) {
-                  // Implement language change
-                },
-              ),
-            ),
-          ],
-        ),
+        title: const Text('Delete Danger Zone'),
+        content: const Text('Are you sure you want to delete this danger zone?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
-              // Save settings
-              Navigator.pop(context);
+            onPressed: () async {
+              try {
+                await _firestore.collection('danger_zones').doc(zone.id).delete();
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Danger zone deleted successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  // Refresh dashboard stats after deleting
+                  Provider.of<DashboardProvider>(context, listen: false).loadDashboardStats();
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error deleting danger zone: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
-            child: const Text('Save'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -1328,8 +1250,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (locationController.text.isEmpty ||
-                  descriptionController.text.isEmpty) {
+              if (locationController.text.isEmpty || descriptionController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Please fill in all fields'),
@@ -1339,7 +1260,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 return;
               }
               try {
-                await _firestore.collection('dangerZones').add({
+                await _firestore.collection('danger_zones').add({
                   'location': locationController.text,
                   'description': descriptionController.text,
                   'severity': severity,
@@ -1348,8 +1269,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   'coordinates': {
                     'latitude': 0.0,
                     'longitude': 0.0
-                  }, // TODO: Let admin pick on map
+                  },
                   'createdAt': FieldValue.serverTimestamp(),
+                  'isActive': true,
                 });
                 if (mounted) {
                   Navigator.pop(context);
@@ -1359,6 +1281,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       backgroundColor: Colors.green,
                     ),
                   );
+                  // Refresh dashboard stats after adding
+                  Provider.of<DashboardProvider>(context, listen: false).loadDashboardStats();
                 }
               } catch (e) {
                 if (mounted) {
@@ -1378,244 +1302,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  void _showAddDeviceDialog() {
-    final nameController = TextEditingController();
-    final deviceIdController = TextEditingController();
-    String? selectedUserId;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New Device'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Device Name',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: deviceIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Device ID',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              StreamBuilder<QuerySnapshot>(
-                stream:
-                    _firestore.collection('users').orderBy('name').snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const CircularProgressIndicator();
-                  }
-                  final users = snapshot.data!.docs;
-                  return DropdownButtonFormField<String>(
-                    value: selectedUserId,
-                    decoration: const InputDecoration(
-                      labelText: 'Assign to User',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: users.map((userDoc) {
-                      final data = userDoc.data() as Map<String, dynamic>;
-                      return DropdownMenuItem(
-                        value: userDoc.id,
-                        child:
-                            Text(data['name'] ?? data['email'] ?? userDoc.id),
-                      );
-                    }).toList(),
-                    onChanged: (value) => selectedUserId = value,
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameController.text.isEmpty ||
-                  deviceIdController.text.isEmpty ||
-                  selectedUserId == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content:
-                        Text('Please fill in all fields and select a user'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              try {
-                await _firestore.collection('devices').add({
-                  'name': nameController.text,
-                  'deviceId': deviceIdController.text,
-                  'isOnline': false,
-                  'batteryLevel': 100,
-                  'lastSeen': FieldValue.serverTimestamp(),
-                  'createdAt': FieldValue.serverTimestamp(),
-                  'userId': selectedUserId,
-                });
-
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Device added successfully'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error adding device: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditDeviceDialog(DocumentSnapshot device) {
-    final data = device.data() as Map<String, dynamic>;
-    final nameController = TextEditingController(text: data['name']);
-    final deviceIdController = TextEditingController(text: data['deviceId']);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Device'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Device Name',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: deviceIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Device ID',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                await _firestore.collection('devices').doc(device.id).update({
-                  'name': nameController.text,
-                  'deviceId': deviceIdController.text,
-                  'updatedAt': FieldValue.serverTimestamp(),
-                });
-
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Device updated successfully'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error updating device: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteDeviceDialog(String deviceId) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Device'),
-        content: const Text('Are you sure you want to delete this device?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                await _firestore.collection('devices').doc(deviceId).delete();
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Device deleted successfully'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error deleting device: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Add a basic _buildFloatingActionButton to resolve the error
   Widget _buildFloatingActionButton() {
+    // Show Add User FAB on Users tab for admin
     if (_selectedIndex == 1 && _isAdmin) {
       return FloatingActionButton(
         onPressed: _showCreateUserDialog,
         child: const Icon(Icons.add),
         tooltip: 'Add User',
+      );
+    }
+    // Show Add Danger Zone FAB on Danger Zones tab for admin
+    if (_selectedIndex == 3 && _isAdmin) {
+      return FloatingActionButton(
+        onPressed: _showAddDangerZoneDialog,
+        child: const Icon(Icons.add_location_alt),
+        tooltip: 'Add Danger Zone',
       );
     }
     // Return an empty SizedBox if no FAB is needed
@@ -1748,6 +1449,270 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         );
       },
     );
+  }
+
+  // --- Add missing methods to resolve errors ---
+
+  void _showNotificationsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('System Notifications'),
+        content: const Text('No notifications yet.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dashboard Settings'),
+        content: const Text('Settings dialog placeholder.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddDeviceDialog() {
+    final nameController = TextEditingController();
+    final deviceIdController = TextEditingController();
+    String? selectedUserId;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add New Device'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Device Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: deviceIdController,
+                decoration: const InputDecoration(
+                  labelText: 'Device ID',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              StreamBuilder<QuerySnapshot>(
+                stream: _firestore.collection('users').orderBy('name').snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const CircularProgressIndicator();
+                  }
+                  final users = snapshot.data!.docs;
+                  return DropdownButtonFormField<String>(
+                    value: selectedUserId,
+                    decoration: const InputDecoration(
+                      labelText: 'Assign to User',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: users.map((userDoc) {
+                      final data = userDoc.data() as Map<String, dynamic>;
+                      return DropdownMenuItem(
+                        value: userDoc.id,
+                        child: Text(data['name'] ?? data['email'] ?? userDoc.id),
+                      );
+                    }).toList(),
+                    onChanged: (value) => selectedUserId = value,
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.isEmpty ||
+                  deviceIdController.text.isEmpty ||
+                  selectedUserId == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please fill in all fields and select a user'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              try {
+                await _firestore.collection('devices').add({
+                  'name': nameController.text,
+                  'deviceId': deviceIdController.text,
+                  'isOnline': false,
+                  'batteryLevel': 100,
+                  'lastSeen': FieldValue.serverTimestamp(),
+                  'createdAt': FieldValue.serverTimestamp(),
+                  'userId': selectedUserId,
+                });
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Device added successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error adding device: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditDeviceDialog(DocumentSnapshot device) {
+    final data = device.data() as Map<String, dynamic>;
+    final nameController = TextEditingController(text: data['name']);
+    final deviceIdController = TextEditingController(text: data['deviceId']);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Device'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Device Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: deviceIdController,
+                decoration: const InputDecoration(
+                  labelText: 'Device ID',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await _firestore.collection('devices').doc(device.id).update({
+                  'name': nameController.text,
+                  'deviceId': deviceIdController.text,
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Device updated successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error updating device: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteDeviceDialog(String deviceId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Device'),
+        content: const Text('Are you sure you want to delete this device?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await _firestore.collection('devices').doc(deviceId).delete();
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Device deleted successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error deleting device: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReportsList(List<UserReport> reports) {
+    // Placeholder for reports list
+    return const Center(child: Text('Reports feature coming soon.'));
   }
 }
 

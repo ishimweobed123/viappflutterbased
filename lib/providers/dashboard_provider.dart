@@ -69,7 +69,7 @@ class DashboardProvider with ChangeNotifier {
 
       // Get danger zones
       final dangerZonesSnapshot = await _firestore
-          .collection('dangerZones')
+          .collection('danger_zones')
           .where('isActive', isEqualTo: true)
           .get();
 
@@ -79,6 +79,20 @@ class DashboardProvider with ChangeNotifier {
         final createdTimestamp = data['createdAt'] as Timestamp?;
         final resolvedTimestamp = data['resolvedAt'] as Timestamp?;
 
+        // Fix: Convert coordinates from Map to GeoPoint if needed
+        GeoPoint coordinates;
+        if (data['coordinates'] is GeoPoint) {
+          coordinates = data['coordinates'] as GeoPoint;
+        } else if (data['coordinates'] is Map) {
+          final coordsMap = data['coordinates'] as Map;
+          coordinates = GeoPoint(
+            (coordsMap['latitude'] ?? 0.0).toDouble(),
+            (coordsMap['longitude'] ?? 0.0).toDouble(),
+          );
+        } else {
+          coordinates = const GeoPoint(0, 0);
+        }
+
         return DangerZone(
           id: doc.id,
           location: data['location'] ?? '',
@@ -86,7 +100,7 @@ class DashboardProvider with ChangeNotifier {
           severity: data['severity'] ?? 'low',
           incidents: data['incidents'] ?? 0,
           lastReported: timestamp?.toDate() ?? DateTime.now(),
-          coordinates: data['coordinates'] as GeoPoint? ?? const GeoPoint(0, 0),
+          coordinates: coordinates,
           type: data['type'] ?? 'obstacle',
           affectedUsers: List<String>.from(data['affectedUsers'] ?? []),
           isActive: data['isActive'] ?? true,

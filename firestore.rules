@@ -30,7 +30,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // DangerZones collection
+    // DangerZones collection (underscore version)
+    match /danger_zones/{zoneId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // DangerZones collection (camelCase, for backward compatibility, can be removed if not used)
     match /dangerZones/{zoneId} {
       allow read: if request.auth != null;
       allow write: if isAdmin();
@@ -95,4 +101,4 @@ service cloud.firestore {
       allow read, write: if false;
     }
   }
-} 
+}
