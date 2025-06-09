@@ -12,147 +12,150 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const NotificationsScreen()),
-              );
-            },
-          ),
-        ],
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Profile'),
-              onTap: () {
+    return Expanded(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Dashboard'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications),
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const ProfileScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('User Management'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const UserManagementScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.security),
-              title: const Text('Role Management'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const RoleManagementScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.lock),
-              title: const Text('Permission Management'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const PermissionManagementScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.access_time),
-              title: const Text('Session Management'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const SessionManagementScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.help),
-              title: const Text('Help'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HelpScreen()),
+                      builder: (context) => const NotificationsScreen()),
                 );
               },
             ),
           ],
         ),
-      ),
-      body: GridView.count(
-        crossAxisCount: 2,
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          _buildDashboardItem(
-            context,
-            'Profile',
-            Icons.person,
-            const ProfileScreen(),
+        drawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              const DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                ),
+                child: Text(
+                  'Menu',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text('Profile'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ProfileScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.people),
+                title: const Text('User Management'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const UserManagementScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.security),
+                title: const Text('Role Management'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const RoleManagementScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.lock),
+                title: const Text('Permission Management'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            const PermissionManagementScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.access_time),
+                title: const Text('Session Management'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const SessionManagementScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.help),
+                title: const Text('Help'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HelpScreen()),
+                  );
+                },
+              ),
+            ],
           ),
-          _buildDashboardItem(
-            context,
-            'Users',
-            Icons.people,
-            const UserManagementScreen(),
-          ),
-          _buildDashboardItem(
-            context,
-            'Roles',
-            Icons.security,
-            const RoleManagementScreen(),
-          ),
-          _buildDashboardItem(
-            context,
-            'Permissions',
-            Icons.lock,
-            const PermissionManagementScreen(),
-          ),
-          _buildDashboardItem(
-            context,
-            'Sessions',
-            Icons.access_time,
-            const SessionManagementScreen(),
-          ),
-          _buildDashboardItem(
-            context,
-            'Help',
-            Icons.help,
-            const HelpScreen(),
-          ),
-        ],
+        ),
+        body: GridView.count(
+          crossAxisCount: 2,
+          padding: const EdgeInsets.all(16.0),
+          children: [
+            _buildDashboardItem(
+              context,
+              'Profile',
+              Icons.person,
+              const ProfileScreen(),
+            ),
+            _buildDashboardItem(
+              context,
+              'Users',
+              Icons.people,
+              const UserManagementScreen(),
+            ),
+            _buildDashboardItem(
+              context,
+              'Roles',
+              Icons.security,
+              const RoleManagementScreen(),
+            ),
+            _buildDashboardItem(
+              context,
+              'Permissions',
+              Icons.lock,
+              const PermissionManagementScreen(),
+            ),
+            _buildDashboardItem(
+              context,
+              'Sessions',
+              Icons.access_time,
+              const SessionManagementScreen(),
+            ),
+            _buildDashboardItem(
+              context,
+              'Help',
+              Icons.help,
+              const HelpScreen(),
+            ),
+          ],
+        ),
       ),
     );
   }

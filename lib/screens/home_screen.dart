@@ -358,18 +358,16 @@ class _HomeScreenState extends State<HomeScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
     return Scaffold(
+      appBar: AppBar(
+        title: _buildUserHeader(user),
+      ),
+      drawer: Drawer(
+        child: _buildUserSidebar(user),
+      ),
       backgroundColor: Colors.grey[100],
-      body: Row(
+      body: Column(
         children: [
-          _buildUserSidebar(user),
-          Expanded(
-            child: Column(
-              children: [
-                _buildUserHeader(user),
-                Expanded(child: _buildUserDashboardBody(user)),
-              ],
-            ),
-          ),
+          Expanded(child: _buildUserDashboardBody(user)),
         ],
       ),
     );
@@ -382,6 +380,67 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Fix ListTile and SizedBox usage, and ensure all widget parameters are correct
+  // Widget _buildUserSidebar(AppUser? user) {
+  //   return Container(
+  //     width: 220,
+  //     color: Colors.blueGrey[900],
+  //     child: Column(
+  //       children: [
+  //         const SizedBox(height: 32),
+  //         const CircleAvatar(
+  //           radius: 36,
+  //           backgroundColor: Colors.blue,
+  //           child: Icon(Icons.person, size: 40, color: Colors.white),
+  //         ),
+  //         const SizedBox(height: 12),
+  //         Text(
+  //           user?.name ?? 'User',
+  //           style: const TextStyle(
+  //               color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+  //         ),
+  //         const SizedBox(height: 32),
+  //         ListTile(
+  //           leading: const Icon(Icons.dashboard, color: Colors.white70),
+  //           title: const Text('Dashboard',
+  //               style: TextStyle(color: Colors.white70)),
+  //           selected: _selectedTabIndex == 0,
+  //           selectedTileColor: const Color(0xFF263238),
+  //           onTap: () => _onSidebarTap(0),
+  //         ),
+  //         ListTile(
+  //           leading: const Icon(Icons.map, color: Colors.white70),
+  //           title: const Text('My Location',
+  //               style: TextStyle(color: Colors.white70)),
+  //           selected: _selectedTabIndex == 1,
+  //           selectedTileColor: const Color(0xFF263238),
+  //           onTap: () => _onSidebarTap(1),
+  //         ),
+  //         ListTile(
+  //           leading: const Icon(Icons.warning, color: Colors.white70),
+  //           title: const Text('Danger Zones',
+  //               style: TextStyle(color: Colors.white70)),
+  //           selected: _selectedTabIndex == 2,
+  //           selectedTileColor: const Color(0xFF263238),
+  //           onTap: () => _onSidebarTap(2),
+  //         ),
+  //         const Spacer(),
+  //         ListTile(
+  //           leading: const Icon(Icons.logout, color: Colors.redAccent),
+  //           title:
+  //               const Text('Logout', style: TextStyle(color: Colors.redAccent)),
+  //           onTap: () async {
+  //             await Provider.of<AuthProvider>(context, listen: false).signOut();
+  //             if (mounted) {
+  //               Navigator.of(context).pushReplacementNamed('/login');
+  //             }
+  //           },
+  //         ),
+  //         const SizedBox(height: 16),
+  //       ],
+  //     ),
+  //   );
+  // }
+
   Widget _buildUserSidebar(AppUser? user) {
     return Container(
       width: 220,
@@ -403,30 +462,44 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 32),
           ListTile(
             leading: const Icon(Icons.dashboard, color: Colors.white70),
-            title: const Text('Dashboard', style: TextStyle(color: Colors.white70)),
+            title: const Text('Dashboard',
+                style: TextStyle(color: Colors.white70)),
             selected: _selectedTabIndex == 0,
             selectedTileColor: const Color(0xFF263238),
-            onTap: () => _onSidebarTap(0),
+            onTap: () {
+              Navigator.pop(context); // ✅ Close drawer
+              _onSidebarTap(0); // 👉 Handle tab change
+            },
           ),
           ListTile(
             leading: const Icon(Icons.map, color: Colors.white70),
-            title: const Text('My Location', style: TextStyle(color: Colors.white70)),
+            title: const Text('My Location',
+                style: TextStyle(color: Colors.white70)),
             selected: _selectedTabIndex == 1,
             selectedTileColor: const Color(0xFF263238),
-            onTap: () => _onSidebarTap(1),
+            onTap: () {
+              Navigator.pop(context);
+              _onSidebarTap(1);
+            },
           ),
           ListTile(
             leading: const Icon(Icons.warning, color: Colors.white70),
-            title: const Text('Danger Zones', style: TextStyle(color: Colors.white70)),
+            title: const Text('Danger Zones',
+                style: TextStyle(color: Colors.white70)),
             selected: _selectedTabIndex == 2,
             selectedTileColor: const Color(0xFF263238),
-            onTap: () => _onSidebarTap(2),
+            onTap: () {
+              Navigator.pop(context);
+              _onSidebarTap(2);
+            },
           ),
           const Spacer(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.redAccent),
-            title: const Text('Logout', style: TextStyle(color: Colors.redAccent)),
+            title:
+                const Text('Logout', style: TextStyle(color: Colors.redAccent)),
             onTap: () async {
+              Navigator.pop(context); // ✅ Close drawer before logout
               await Provider.of<AuthProvider>(context, listen: false).signOut();
               if (mounted) {
                 Navigator.of(context).pushReplacementNamed('/login');
@@ -518,7 +591,8 @@ class _HomeScreenState extends State<HomeScreen> {
               .snapshots(),
           builder: (context, snapshot) {
             final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
-            return _buildUserStatCard('My Devices', count.toString(), Icons.device_hub, Colors.blue);
+            return _buildUserStatCard(
+                'My Devices', count.toString(), Icons.device_hub, Colors.blue);
           },
         ),
         // Danger Zones stat card (real-time)
@@ -529,7 +603,8 @@ class _HomeScreenState extends State<HomeScreen> {
               .snapshots(),
           builder: (context, snapshot) {
             final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
-            return _buildUserStatCard('Danger Zones', count.toString(), Icons.warning, Colors.red);
+            return _buildUserStatCard(
+                'Danger Zones', count.toString(), Icons.warning, Colors.red);
           },
         ),
       ],
@@ -558,7 +633,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
                   Text('My Devices',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
                   Text('No devices assigned.'),
                 ],
@@ -575,7 +651,8 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('My Devices',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 ...docs.map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
@@ -614,7 +691,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildUserDangerZonesSection() {
     // Show all active danger zones in real time
-    return StreamBuilder<QuerySnapshot>(      stream: FirebaseFirestore.instance
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
           .collection('dangerZones')
           .orderBy('lastReported', descending: true)
           .snapshots(),
@@ -631,7 +709,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
                   Text('Danger Zones',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
                   Text('No danger zones reported.'),
                 ],
@@ -648,7 +727,8 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('Danger Zones',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 ...docs.map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
@@ -661,7 +741,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 : Colors.yellow),
                     title: Text(data['location'] ?? 'Unknown'),
                     subtitle: Text(data['description'] ?? ''),
-                    trailing: Text((data['severity'] ?? '').toString().toUpperCase()),
+                    trailing:
+                        Text((data['severity'] ?? '').toString().toUpperCase()),
                   );
                 }),
               ],
@@ -761,7 +842,8 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('My Location', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const Text('My Location',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               _buildUserMapSection(),
             ],
@@ -773,7 +855,8 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Danger Zones', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const Text('Danger Zones',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               _buildUserDangerZonesSection(),
             ],
@@ -788,7 +871,8 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildUserStatCards(user),
               const SizedBox(height: 24),
-              const Text('My Devices', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text('My Devices',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               _buildUserDevicesSection(user),
             ],

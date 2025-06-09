@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:visual_impaired_assistive_app/providers/auth_provider.dart';
 import 'package:visual_impaired_assistive_app/providers/dashboard_provider.dart';
-import 'package:visual_impaired_assistive_app/providers/user_report_provider.dart';
 import 'package:visual_impaired_assistive_app/models/statistics_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -185,6 +184,99 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  // Widget _buildSidebar() {
+  //   return Container(
+  //     width: 220,
+  //     color: Colors.blueGrey[900],
+  //     child: Column(
+  //       children: [
+  //         const SizedBox(height: 32),
+  //         CircleAvatar(
+  //           radius: 36,
+  //           backgroundColor: Colors.blue[300],
+  //           child: const Icon(Icons.admin_panel_settings,
+  //               size: 40, color: Colors.white),
+  //         ),
+  //         const SizedBox(height: 12),
+  //         Text(
+  //           'Admin',
+  //           style: TextStyle(
+  //               color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+  //         ),
+  //         const SizedBox(height: 32),
+  //         ...List.generate(
+  //             _sections.length,
+  //             (i) => ListTile(
+  //                   leading: Icon(
+  //                     i == 0
+  //                         ? Icons.dashboard
+  //                         : i == 1
+  //                             ? Icons.people
+  //                             : i == 2
+  //                                 ? Icons.device_hub
+  //                                 : Icons.warning,
+  //                     color: _selectedIndex == i
+  //                         ? Colors.blue[200]
+  //                         : Colors.white70,
+  //                   ),
+  //                   title: Text(
+  //                     _sections[i],
+  //                     style: TextStyle(
+  //                       color: _selectedIndex == i
+  //                           ? Colors.blue[200]
+  //                           : Colors.white70,
+  //                       fontWeight: _selectedIndex == i
+  //                           ? FontWeight.bold
+  //                           : FontWeight.normal,
+  //                     ),
+  //                   ),
+  //                   selected: _selectedIndex == i,
+  //                   selectedTileColor: Colors.blueGrey[800],
+  //                   onTap: () => setState(() => _selectedIndex = i),
+  //                 )),
+  //         const Spacer(),
+  //         ListTile(
+  //           leading: const Icon(Icons.logout, color: Colors.redAccent),
+  //           title:
+  //               const Text('Logout', style: TextStyle(color: Colors.redAccent)),
+  //           onTap: () async {
+  //             await Provider.of<AuthProvider>(context, listen: false).signOut();
+  //             if (mounted) {
+  //               Navigator.of(context).pushReplacementNamed('/login');
+  //             }
+  //           },
+  //         ),
+  //         const SizedBox(height: 16),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  // @override
+  // Widget build(BuildContext context) {
+  //   return Scaffold(
+  //     drawer: Drawer(
+  //       child: _buildSidebar(),
+  //     ),
+  //     body: Expanded(
+  //       child: Row(
+  //         children: [
+  //           _buildSidebar(),
+  //           Expanded(
+  //             child: Column(
+  //               children: [
+  //                 _buildHeader(),
+  //                 Expanded(child: _buildBody()),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //     floatingActionButton: _buildFloatingActionButton(),
+  //   );
+  // }
+
   Widget _buildSidebar() {
     return Container(
       width: 220,
@@ -206,41 +298,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           const SizedBox(height: 32),
           ...List.generate(
-              _sections.length,
-              (i) => ListTile(
-                    leading: Icon(
-                      i == 0
-                          ? Icons.dashboard
-                          : i == 1
-                              ? Icons.people
-                              : i == 2
-                                  ? Icons.device_hub
-                                  : Icons.warning,
-                      color: _selectedIndex == i
-                          ? Colors.blue[200]
-                          : Colors.white70,
-                    ),
-                    title: Text(
-                      _sections[i],
-                      style: TextStyle(
-                        color: _selectedIndex == i
-                            ? Colors.blue[200]
-                            : Colors.white70,
-                        fontWeight: _selectedIndex == i
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                    selected: _selectedIndex == i,
-                    selectedTileColor: Colors.blueGrey[800],
-                    onTap: () => setState(() => _selectedIndex = i),
-                  )),
+            _sections.length,
+            (i) => ListTile(
+              leading: Icon(
+                i == 0
+                    ? Icons.dashboard
+                    : i == 1
+                        ? Icons.people
+                        : i == 2
+                            ? Icons.device_hub
+                            : Icons.warning,
+                color: _selectedIndex == i ? Colors.blue[200] : Colors.white70,
+              ),
+              title: Text(
+                _sections[i],
+                style: TextStyle(
+                  color:
+                      _selectedIndex == i ? Colors.blue[200] : Colors.white70,
+                  fontWeight:
+                      _selectedIndex == i ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              selected: _selectedIndex == i,
+              selectedTileColor: Colors.blueGrey[800],
+              onTap: () {
+                Navigator.pop(context); // ✅ CLOSE the Drawer
+                setState(() => _selectedIndex = i); // Update UI
+              },
+            ),
+          ),
           const Spacer(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.redAccent),
             title:
                 const Text('Logout', style: TextStyle(color: Colors.redAccent)),
             onTap: () async {
+              Navigator.pop(context); // ✅ CLOSE the Drawer
               await Provider.of<AuthProvider>(context, listen: false).signOut();
               if (mounted) {
                 Navigator.of(context).pushReplacementNamed('/login');
@@ -256,17 +349,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      body: Row(
+      appBar: AppBar(
+        title: _buildHeader(),
+      ),
+      drawer: Drawer(
+        child: _buildSidebar(),
+      ),
+      body: Column(
         children: [
-          _buildSidebar(),
+          // _buildHeader(),
           Expanded(
-            child: Column(
-              children: [
-                _buildHeader(),
-                Expanded(child: _buildBody()),
-              ],
-            ),
+            child: _buildBody(),
           ),
         ],
       ),
@@ -966,8 +1059,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 options: const MapOptions(),
                 children: [
                   TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.example.visual_impaired_assistive_app',
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName:
+                        'com.example.visual_impaired_assistive_app',
                     tileProvider: CancellableNetworkTileProvider(),
                   ),
                   MarkerLayer(
@@ -1107,7 +1202,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (locationController.text.isEmpty || descriptionController.text.isEmpty) {
+              if (locationController.text.isEmpty ||
+                  descriptionController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Please fill in all fields'),
@@ -1117,7 +1213,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 return;
               }
               try {
-                await _firestore.collection('danger_zones').doc(zone.id).update({
+                await _firestore
+                    .collection('danger_zones')
+                    .doc(zone.id)
+                    .update({
                   'location': locationController.text,
                   'description': descriptionController.text,
                   'severity': severity,
@@ -1132,7 +1231,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                   );
                   // Refresh dashboard stats after editing
-                  Provider.of<DashboardProvider>(context, listen: false).loadDashboardStats();
+                  Provider.of<DashboardProvider>(context, listen: false)
+                      .loadDashboardStats();
                 }
               } catch (e) {
                 if (mounted) {
@@ -1157,7 +1257,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Danger Zone'),
-        content: const Text('Are you sure you want to delete this danger zone?'),
+        content:
+            const Text('Are you sure you want to delete this danger zone?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -1166,7 +1267,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ElevatedButton(
             onPressed: () async {
               try {
-                await _firestore.collection('danger_zones').doc(zone.id).delete();
+                await _firestore
+                    .collection('danger_zones')
+                    .doc(zone.id)
+                    .delete();
                 if (mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1176,7 +1280,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                   );
                   // Refresh dashboard stats after deleting
-                  Provider.of<DashboardProvider>(context, listen: false).loadDashboardStats();
+                  Provider.of<DashboardProvider>(context, listen: false)
+                      .loadDashboardStats();
                 }
               } catch (e) {
                 if (mounted) {
@@ -1250,7 +1355,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (locationController.text.isEmpty || descriptionController.text.isEmpty) {
+              if (locationController.text.isEmpty ||
+                  descriptionController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Please fill in all fields'),
@@ -1266,10 +1372,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   'severity': severity,
                   'incidents': 1,
                   'lastReported': FieldValue.serverTimestamp(),
-                  'coordinates': {
-                    'latitude': 0.0,
-                    'longitude': 0.0
-                  },
+                  'coordinates': {'latitude': 0.0, 'longitude': 0.0},
                   'createdAt': FieldValue.serverTimestamp(),
                   'isActive': true,
                 });
@@ -1282,7 +1385,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                   );
                   // Refresh dashboard stats after adding
-                  Provider.of<DashboardProvider>(context, listen: false).loadDashboardStats();
+                  Provider.of<DashboardProvider>(context, listen: false)
+                      .loadDashboardStats();
                 }
               } catch (e) {
                 if (mounted) {
@@ -1515,7 +1619,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               const SizedBox(height: 16),
               StreamBuilder<QuerySnapshot>(
-                stream: _firestore.collection('users').orderBy('name').snapshots(),
+                stream:
+                    _firestore.collection('users').orderBy('name').snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return const CircularProgressIndicator();
@@ -1531,7 +1636,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       final data = userDoc.data() as Map<String, dynamic>;
                       return DropdownMenuItem(
                         value: userDoc.id,
-                        child: Text(data['name'] ?? data['email'] ?? userDoc.id),
+                        child:
+                            Text(data['name'] ?? data['email'] ?? userDoc.id),
                       );
                     }).toList(),
                     onChanged: (value) => selectedUserId = value,
@@ -1553,7 +1659,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   selectedUserId == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Please fill in all fields and select a user'),
+                    content:
+                        Text('Please fill in all fields and select a user'),
                     backgroundColor: Colors.red,
                   ),
                 );
