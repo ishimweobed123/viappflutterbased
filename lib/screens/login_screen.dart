@@ -46,10 +46,8 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         // Fetch user role from Firestore using UID
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .get();
+        final userDoc =
+            await FirebaseFirestore.instance.collection('users').doc(uid).get();
         final role = userDoc.data()?['role'] ?? 'user';
 
         if (!mounted) return;
@@ -79,8 +77,10 @@ class _LoginScreenState extends State<LoginScreen> {
         title: const Text('Login'),
       ),
       body: Center(
+    
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
+        
           child: Form(
             key: _formKey,
             child: Column(
@@ -107,7 +107,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     labelText: 'Email',
-                    border: OutlineInputBorder(),
+                    // Default border (enabled)
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey),
+                    ),
+
+                    // Focused border
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                    ),
                     prefixIcon: Icon(Icons.email),
                   ),
                   validator: (value) {
@@ -126,7 +134,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: true,
                   decoration: const InputDecoration(
                     labelText: 'Password',
-                    border: OutlineInputBorder(),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey),
+                    ),
+
+                    // Focused border
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                    ),
                     prefixIcon: Icon(Icons.lock),
                   ),
                   validator: (value) {

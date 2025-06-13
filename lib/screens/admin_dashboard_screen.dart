@@ -355,6 +355,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       drawer: Drawer(
         child: _buildSidebar(),
       ),
+      // endDrawer: Drawer(
+      //   child: _buildSidebar(),
+      // ),
       body: Column(
         children: [
           // _buildHeader(),

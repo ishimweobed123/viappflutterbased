@@ -526,21 +526,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.blueGrey),
           ),
           const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.blueGrey),
-            onPressed: () {},
-            tooltip: 'Notifications',
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.notifications, color: Colors.blueGrey),
+          //   onPressed: () {},
+          //   tooltip: 'Notifications',
+          // ),
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.blueGrey),
             onPressed: _showSettingsDialog,
             tooltip: 'Settings',
           ),
-          SizedBox(width: 12),
-          CircleAvatar(
-            backgroundColor: Colors.blue[200],
-            child: const Icon(Icons.person, color: Colors.white),
-          ),
+          // SizedBox(width: 12),
+          // CircleAvatar(
+          //   backgroundColor: Colors.blue[200],
+          //   child: const Icon(Icons.person, color: Colors.white),
+          // ),
         ],
       ),
     );
